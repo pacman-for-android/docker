@@ -1,8 +1,8 @@
 # Maintainer: Sébastien "Seblu" Luttringer
 
 pkgname=docker
-pkgver=1.1.2
-pkgrel=2
+pkgver=1.2.0
+pkgrel=1
 epoch=1
 pkgdesc='Pack, ship and run any application as a lightweight container'
 arch=('x86_64')
@@ -15,10 +15,8 @@ optdepends=('btrfs-progs: btrfs backend support'
 # don't strip binaries! A sha1 is used to check binary consistency.
 options=('!strip')
 install=$pkgname.install
-source=("git+https://github.com/docker/docker.git#tag=v$pkgver"
-        'docker.service')
-md5sums=('SKIP'
-         'aea0c57d458e3fc313107a76745c96bb')
+source=("git+https://github.com/docker/docker.git#tag=v$pkgver")
+md5sums=('SKIP')
 
 build() {
   cd docker
@@ -40,10 +38,9 @@ package() {
   install -Dm644 'contrib/completion/bash/docker' "$pkgdir/usr/share/bash-completion/completions/docker"
   install -Dm644 'contrib/completion/zsh/_docker' "$pkgdir/usr/share/zsh/site-functions/_docker"
   # systemd
-  #install -Dm644 'contrib/init/systemd/socket-activation/docker.service' \
-  install -Dm644 "$srcdir/docker.service" \
+  install -Dm644 'contrib/init/systemd/docker.service' \
     "$pkgdir/usr/lib/systemd/system/docker.service"
-  install -Dm644 'contrib/init/systemd/socket-activation/docker.socket' \
+  install -Dm644 'contrib/init/systemd/docker.socket' \
     "$pkgdir/usr/lib/systemd/system/docker.socket"
   # vim syntax
   install -Dm644 'contrib/syntax/vim/syntax/dockerfile.vim' \
