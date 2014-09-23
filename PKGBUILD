@@ -2,7 +2,7 @@
 
 pkgname=docker
 pkgver=1.2.0
-pkgrel=1
+pkgrel=2
 epoch=1
 pkgdesc='Pack, ship and run any application as a lightweight container'
 arch=('x86_64')
@@ -37,6 +37,7 @@ package() {
   # completion
   install -Dm644 'contrib/completion/bash/docker' "$pkgdir/usr/share/bash-completion/completions/docker"
   install -Dm644 'contrib/completion/zsh/_docker' "$pkgdir/usr/share/zsh/site-functions/_docker"
+  install -Dm644 'contrib/completion/fish/docker.fish' "$pkgdir/usr/share/fish/completions/docker.fish"
   # systemd
   install -Dm644 'contrib/init/systemd/docker.service' \
     "$pkgdir/usr/lib/systemd/system/docker.service"
