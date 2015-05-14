@@ -1,7 +1,7 @@
 # Maintainer: Sébastien "Seblu" Luttringer
 
 pkgname=docker
-pkgver=1.6.1
+pkgver=1.6.2
 pkgrel=1
 epoch=1
 pkgdesc='Pack, ship and run any application as a lightweight container'
@@ -27,8 +27,7 @@ build() {
 }
 
 #check() {
-#  cd "$_magic/docker"
-#  # Will be added upstream soon
+#  cd docker
 #  ./hack/make.sh dyntest
 #}
 
