@@ -1,0 +1,210 @@
+diff --git a/client/client_unix.go b/client/client_unix.go
+index 319b738d3e..331aa92083 100644
+--- a/client/client_unix.go
++++ b/client/client_unix.go
+@@ -5,4 +5,4 @@ package client // import "github.com/docker/docker/client"
+ 
+ // DefaultDockerHost defines OS-specific default host if the DOCKER_HOST
+ // (EnvOverrideHost) environment variable is unset or empty.
+-const DefaultDockerHost = "unix:///var/run/docker.sock"
++const DefaultDockerHost = "unix:///data/var/run/docker.sock"
+diff --git a/cmd/dockerd/daemon_unix.go b/cmd/dockerd/daemon_unix.go
+index cd239522df..1817747a6b 100644
+--- a/cmd/dockerd/daemon_unix.go
++++ b/cmd/dockerd/daemon_unix.go
+@@ -24,7 +24,7 @@ import (
+ 
+ func getDefaultDaemonConfigDir() (string, error) {
+ 	if !honorXDG {
+-		return "/etc/docker", nil
++		return "/data/etc/docker", nil
+ 	}
+ 	// NOTE: CLI uses ~/.docker while the daemon uses ~/.config/docker, because
+ 	// ~/.docker was not designed to store daemon configurations.
+diff --git a/daemon/config/config_linux.go b/daemon/config/config_linux.go
+index 085d6fe478..61a0dfa19c 100644
+--- a/daemon/config/config_linux.go
++++ b/daemon/config/config_linux.go
+@@ -232,9 +232,9 @@ func setPlatformDefaults(cfg *Config) error {
+ 		cfg.ExecRoot = filepath.Join(runtimeDir, "docker")
+ 		cfg.Pidfile = filepath.Join(runtimeDir, "docker.pid")
+ 	} else {
+-		cfg.Root = "/var/lib/docker"
+-		cfg.ExecRoot = "/var/run/docker"
+-		cfg.Pidfile = "/var/run/docker.pid"
++		cfg.Root = "/data/var/lib/docker"
++		cfg.ExecRoot = "/data/var/run/docker"
++		cfg.Pidfile = "/data/var/run/docker.pid"
+ 	}
+ 
+ 	return nil
+diff --git a/daemon/daemon_linux.go b/daemon/daemon_linux.go
+index 80dff4ac95..16e22a2f88 100644
+--- a/daemon/daemon_linux.go
++++ b/daemon/daemon_linux.go
+@@ -24,7 +24,7 @@ import (
+ // plugin socket files are created here and they cannot exceed max
+ // path length of 108 bytes.
+ func getPluginExecRoot(_ *config.Config) string {
+-	return "/run/docker/plugins"
++	return "/data/var/run/docker/plugins"
+ }
+ 
+ func (daemon *Daemon) cleanupMountsByID(id string) error {
+diff --git a/daemon/daemon_unix.go b/daemon/daemon_unix.go
+index b0df9229a2..d306cf66df 100644
+--- a/daemon/daemon_unix.go
++++ b/daemon/daemon_unix.go
+@@ -635,7 +635,7 @@ var (
+ // It was borrowed here to avoid a dependency on cgo.
+ func isRunningSystemd() bool {
+ 	detectSystemd.Do(func() {
+-		fi, err := os.Lstat("/run/systemd/system")
++		fi, err := os.Lstat("/data/var/run/systemd/system")
+ 		if err != nil {
+ 			return
+ 		}
+diff --git a/libnetwork/osl/namespace_linux.go b/libnetwork/osl/namespace_linux.go
+index d7d2fe2d63..8866e99e6a 100644
+--- a/libnetwork/osl/namespace_linux.go
++++ b/libnetwork/osl/namespace_linux.go
+@@ -23,7 +23,7 @@ import (
+ 	"golang.org/x/sys/unix"
+ )
+ 
+-const defaultPrefix = "/var/run/docker"
++const defaultPrefix = "/data/var/run/docker"
+ 
+ func init() {
+ 	// Lock main() to the initial thread to exclude the goroutines spawned
+diff --git a/opts/hosts.go b/opts/hosts.go
+index 412c431fd4..7219babbc5 100644
+--- a/opts/hosts.go
++++ b/opts/hosts.go
+@@ -20,7 +20,7 @@ const (
+ 	DefaultTLSHTTPPort = 2376 // Default TLS encrypted HTTP Port
+ 	// DefaultUnixSocket Path for the unix socket.
+ 	// Docker daemon by default always listens on the default unix socket
+-	DefaultUnixSocket = "/var/run/docker.sock"
++	DefaultUnixSocket = "/data/var/run/docker.sock"
+ 	// DefaultTCPHost constant defines the default host string used by docker on Windows
+ 	DefaultTCPHost = "tcp://" + DefaultHTTPHost + ":2375"
+ 	// DefaultTLSHost constant defines the default host string used by docker for TLS sockets
+diff --git a/pkg/plugins/discovery.go b/pkg/plugins/discovery.go
+index 04c3779df9..670cd20efb 100644
+--- a/pkg/plugins/discovery.go
++++ b/pkg/plugins/discovery.go
+@@ -16,7 +16,7 @@ import (
+ var (
+ 	// ErrNotFound plugin not found
+ 	ErrNotFound = errors.New("plugin not found")
+-	socketsPath = "/run/docker/plugins"
++	socketsPath = "/data/var/run/docker/plugins"
+ )
+ 
+ // LocalRegistry defines a registry that is local (using unix socket).
+diff --git a/pkg/plugins/discovery_unix.go b/pkg/plugins/discovery_unix.go
+index 2c1b2a3193..75026ad4e3 100644
+--- a/pkg/plugins/discovery_unix.go
++++ b/pkg/plugins/discovery_unix.go
+@@ -15,7 +15,7 @@ func rootlessConfigPluginsPath() string {
+ 		return filepath.Join(configHome, "docker/plugins")
+ 	}
+ 
+-	return "/etc/docker/plugins"
++	return "/data/etc/docker/plugins"
+ }
+ 
+ func rootlessLibPluginsPath() string {
+@@ -24,7 +24,7 @@ func rootlessLibPluginsPath() string {
+ 		return filepath.Join(libHome, "docker/plugins")
+ 	}
+ 
+-	return "/usr/lib/docker/plugins"
++	return "/data/usr/lib/docker/plugins"
+ }
+ 
+ // SpecsPaths returns
+@@ -37,5 +37,5 @@ func SpecsPaths() []string {
+ 		return []string{rootlessConfigPluginsPath(), rootlessLibPluginsPath()}
+ 	}
+ 
+-	return []string{"/etc/docker/plugins", "/usr/lib/docker/plugins"}
++	return []string{"/data/etc/docker/plugins", "/data/usr/lib/docker/plugins"}
+ }
+diff --git a/registry/config_unix.go b/registry/config_unix.go
+index 898c6b8a5b..36b1181920 100644
+--- a/registry/config_unix.go
++++ b/registry/config_unix.go
+@@ -6,7 +6,7 @@ package registry // import "github.com/docker/docker/registry"
+ // defaultCertsDir is the platform-specific default directory where certificates
+ // are stored. On Linux, it may be overridden through certsDir, for example, when
+ // running in rootless mode.
+-const defaultCertsDir = "/etc/docker/certs.d"
++const defaultCertsDir = "/data/etc/docker/certs.d"
+ 
+ // cleanPath is used to ensure that a directory name is valid on the target
+ // platform. It will be passed in something *similar* to a URL such as
+diff --git a/vendor/github.com/RackSec/srslog/srslog_unix.go b/vendor/github.com/RackSec/srslog/srslog_unix.go
+index a04d9396f6..f4ebf89012 100644
+--- a/vendor/github.com/RackSec/srslog/srslog_unix.go
++++ b/vendor/github.com/RackSec/srslog/srslog_unix.go
+@@ -15,7 +15,7 @@ import (
+ // library syslog function.
+ func unixSyslog() (conn serverConn, err error) {
+ 	logTypes := []string{"unixgram", "unix"}
+-	logPaths := []string{"/dev/log", "/var/run/syslog", "/var/run/log"}
++	logPaths := []string{"/dev/log", "/data/var/run/syslog", "/data/var/run/log"}
+ 	for _, network := range logTypes {
+ 		for _, path := range logPaths {
+ 			conn, err := net.Dial(network, path)
+diff --git a/vendor/github.com/containerd/containerd/defaults/defaults_unix.go b/vendor/github.com/containerd/containerd/defaults/defaults_unix.go
+index 8e2619a381..48bbfd1b7f 100644
+--- a/vendor/github.com/containerd/containerd/defaults/defaults_unix.go
++++ b/vendor/github.com/containerd/containerd/defaults/defaults_unix.go
+@@ -22,19 +22,19 @@ package defaults
+ const (
+ 	// DefaultRootDir is the default location used by containerd to store
+ 	// persistent data
+-	DefaultRootDir = "/var/lib/containerd"
++	DefaultRootDir = "/data/var/lib/containerd"
+ 	// DefaultStateDir is the default location used by containerd to store
+ 	// transient data
+-	DefaultStateDir = "/run/containerd"
++	DefaultStateDir = "/data/var/run/containerd"
+ 	// DefaultAddress is the default unix socket address
+-	DefaultAddress = "/run/containerd/containerd.sock"
++	DefaultAddress = "/data/var/run/containerd/containerd.sock"
+ 	// DefaultDebugAddress is the default unix socket address for pprof data
+-	DefaultDebugAddress = "/run/containerd/debug.sock"
++	DefaultDebugAddress = "/data/var/run/containerd/debug.sock"
+ 	// DefaultFIFODir is the default location used by client-side cio library
+ 	// to store FIFOs.
+-	DefaultFIFODir = "/run/containerd/fifo"
++	DefaultFIFODir = "/data/var/run/containerd/fifo"
+ 	// DefaultRuntime is the default linux runtime
+ 	DefaultRuntime = "io.containerd.runc.v2"
+ 	// DefaultConfigDir is the default location for config files.
+-	DefaultConfigDir = "/etc/containerd"
++	DefaultConfigDir = "/data/etc/containerd"
+ )
+diff --git a/vendor/github.com/godbus/dbus/v5/conn_unix.go b/vendor/github.com/godbus/dbus/v5/conn_unix.go
+index 58aee7d2af..bc12abbeb0 100644
+--- a/vendor/github.com/godbus/dbus/v5/conn_unix.go
++++ b/vendor/github.com/godbus/dbus/v5/conn_unix.go
+@@ -1,4 +1,5 @@
+-//+build !windows,!solaris,!darwin
++//go:build !windows && !solaris && !darwin
++// +build !windows,!solaris,!darwin
+ 
+ package dbus
+ 
+@@ -6,7 +7,7 @@ import (
+ 	"os"
+ )
+ 
+-const defaultSystemBusAddress = "unix:path=/var/run/dbus/system_bus_socket"
++const defaultSystemBusAddress = "unix:path=/data/var/run/dbus/system_bus_socket"
+ 
+ func getSystemBusPlatformAddress() string {
+ 	address := os.Getenv("DBUS_SYSTEM_BUS_ADDRESS")

@@ -3,7 +3,7 @@
 
 pkgname=docker
 pkgver=24.0.5
-pkgrel=1
+pkgrel=1.1
 epoch=1
 pkgdesc='Pack, ship and run any application as a lightweight container'
 arch=('x86_64' 'aarch64')
@@ -22,11 +22,17 @@ _TINI_COMMIT=de40ad007797e0dcd8b7126f27bb87401d224240
 source=("git+https://github.com/docker/cli.git#tag=v$pkgver"
         "git+https://github.com/moby/moby.git#tag=v$pkgver"
         "git+https://github.com/krallin/tini.git#commit=$_TINI_COMMIT"
-        "$pkgname.sysusers")
+        "$pkgname.sysusers"
+        cli-change-prefix.patch
+        moby-change-prefix.patch
+        fix-tmp-for-man-page-gen.patch)
 sha256sums=('SKIP'
             'SKIP'
             'SKIP'
-            '541826011a9836d05a2f42293d5f1beadf2ca8d89fb604487d61a013505678eb')
+            '541826011a9836d05a2f42293d5f1beadf2ca8d89fb604487d61a013505678eb'
+            'bd04e80858dd48ab46cfe92f962428996f240d6f18d2288c2f76673dcc980eb9'
+            '818a76fd7ebb2ab74456a636bab874d27dd52ba63d739ad0db089e0b0350b329'
+            'dd4777e428e15aeaa772ec2b93bb2bc72bbda7fb82cd6416f410825dd7f5b0b1')
 
 # create a fake go path directory and pushd into it
 # $1 real directory
@@ -40,6 +46,13 @@ _fake_gopath_pushd() {
 
 _fake_gopath_popd() {
   popd >/dev/null
+}
+
+prepare() {
+  patch -Np1 -d cli < cli-change-prefix.patch
+  patch -Np1 -d cli < fix-tmp-for-man-page-gen.patch
+  patch -Np1 -d moby < moby-change-prefix.patch
+  sed -i '1s|.*|#!/data/usr/bin/bash|' cli/scripts/{warn-outside-container,vendor,build/{.variables,binary,mkversioninfo,plugins},docs/*.sh} moby/hack/*.sh
 }
 
 build() {
@@ -88,7 +101,7 @@ build() {
   echo 'Building daemon'
   _fake_gopath_pushd moby github.com/docker/docker
   DOCKER_GITCOMMIT=$(cd "$srcdir"/moby && git rev-parse --short HEAD) \
-    DOCKER_BUILDTAGS='seccomp journald apparmor' \
+    DOCKER_BUILDTAGS='seccomp apparmor' \
     VERSION=$pkgver \
     hack/make.sh dynbinary
   _fake_gopath_popd
@@ -104,28 +117,28 @@ build() {
 
 package() {
   ### init
-  install -Dm755 tini/tini-static "$pkgdir/usr/bin/docker-init"
+  install -Dm755 tini/tini-static "$pkgdir/data/usr/bin/docker-init"
   ### dockerd
-  install -Dm755 moby/bundles/dynbinary-daemon/dockerd "$pkgdir"/usr/bin/dockerd
-  install -Dm755 moby/bundles/dynbinary-daemon/docker-proxy "$pkgdir/usr/bin/docker-proxy"
+  install -Dm755 moby/bundles/dynbinary-daemon/dockerd "$pkgdir"/data/usr/bin/dockerd
+  install -Dm755 moby/bundles/dynbinary-daemon/docker-proxy "$pkgdir/data/usr/bin/docker-proxy"
   ### systemd units
   cd "$srcdir"/moby/contrib
-  install -Dm644 'init/systemd/docker.service' "$pkgdir/usr/lib/systemd/system/docker.service"
-  install -Dm644 'init/systemd/docker.socket' "$pkgdir/usr/lib/systemd/system/docker.socket"
+  install -Dm644 'init/systemd/docker.service' "$pkgdir/data/usr/lib/systemd/system/docker.service"
+  install -Dm644 'init/systemd/docker.socket' "$pkgdir/data/usr/lib/systemd/system/docker.socket"
   # systemd rules
-  install -Dm644 'udev/80-docker.rules' "$pkgdir/usr/lib/udev/rules.d/80-docker.rules"
-  install -Dm644 "$srcdir/$pkgname.sysusers" "$pkgdir/usr/lib/sysusers.d/$pkgname.conf"
+  install -Dm644 'udev/80-docker.rules' "$pkgdir/data/usr/lib/udev/rules.d/80-docker.rules"
+  install -Dm644 "$srcdir/$pkgname.sysusers" "$pkgdir/data/usr/lib/sysusers.d/$pkgname.conf"
   ### cli
   cd "$srcdir"/cli
   # binary
-  install -Dm755 build/docker "$pkgdir/usr/bin/docker"
+  install -Dm755 build/docker "$pkgdir/data/usr/bin/docker"
   # completion (see FS#79067)
-  install -Dm644 <(build/docker completion bash) "$pkgdir/usr/share/bash-completion/completions/docker"
-  install -Dm644 <(build/docker completion zsh) "$pkgdir/usr/share/zsh/site-functions/_docker"
-  install -Dm644 <(build/docker completion fish) "$pkgdir/usr/share/fish/vendor_completions.d/docker.fish"
+  install -Dm644 <(build/docker completion bash) "$pkgdir/data/usr/share/bash-completion/completions/docker"
+  install -Dm644 <(build/docker completion zsh) "$pkgdir/data/usr/share/zsh/site-functions/_docker"
+  install -Dm644 <(build/docker completion fish) "$pkgdir/data/usr/share/fish/vendor_completions.d/docker.fish"
   # man
-  install -dm755 "$pkgdir/usr/share/man"
-  cp -r man/man* "$pkgdir/usr/share/man"
+  install -dm755 "$pkgdir/data/usr/share/man"
+  cp -r man/man* "$pkgdir/data/usr/share/man"
 }
 
 # vim:set ts=2 sw=2 et:
