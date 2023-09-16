@@ -3,15 +3,15 @@
 
 pkgname=docker
 pkgver=24.0.5
-pkgrel=1.1
+pkgrel=1.2
 epoch=1
 pkgdesc='Pack, ship and run any application as a lightweight container'
 arch=('x86_64' 'aarch64')
 url='https://www.docker.com/'
 license=('Apache')
-depends=('glibc' 'bridge-utils' 'iproute2' 'device-mapper' 'sqlite' 'systemd-libs'
+depends=('glibc' 'bridge-utils' 'iproute2' 'device-mapper' 'sqlite'
          'libseccomp' 'libtool' 'runc' 'containerd')
-makedepends=('git' 'go' 'btrfs-progs' 'cmake' 'systemd' 'go-md2man' 'sed')
+makedepends=('git' 'go' 'cmake' 'go-md2man' 'sed')
 optdepends=('btrfs-progs: btrfs backend support'
             'pigz: parallel gzip compressor support'
             'docker-scan: vulnerability scanner'
